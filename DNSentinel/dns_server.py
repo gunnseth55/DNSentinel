@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from dnslib import DNSRecord, DNSError, QTYPE, RCODE, RR, A
+from security import analyze_dns_query
 
 HOST="127.0.0.1"
 PORT=5300
@@ -33,6 +34,18 @@ def initialize_database():
                 response_code TEXT
             )
 
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS dns_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                client_ip TEXT,
+                domain TEXT,
+                detector TEXT,
+                risk TEXT,
+                score INTEGER,
+                reasons TEXT
+            )
         """)
 def log_request(client_ip,domain, query_type,status, response_code):
     timestamp=datetime.now().isoformat(timespec="seconds")
@@ -118,9 +131,36 @@ def process_dns_request(request):
 
         return reply, domain, query_type, "ERROR"
 
+#security
+def log_security_alert(client_ip, result):
+
+    if result["risk"] == "LOW":
+        return
+
+    timestamp = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    reasons = "; ".join(result["reasons"])
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT INTO dns_alerts
+            (timestamp, client_ip, domain,
+             detector, risk, score, reasons)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            timestamp,
+            client_ip,
+            result["domain"],
+            "BASELINE",
+            result["risk"],
+            result["score"],
+            reasons
+        ))
 #dns server
 
-def start_dns_server():
+def start_dns_server():     
     initialize_database()
     server=socket.socket(
         socket.AF_INET,
@@ -177,6 +217,25 @@ def start_dns_server():
                     response_code
                 )
 
+                # Analyze the DNS query
+                analysis = analyze_dns_query(domain)
+                
+                if analysis["risk"] != "LOW":
+                
+                    log_security_alert(
+                        client_address[0],
+                        analysis
+                    )
+                
+                    print("\n[SECURITY ALERT]")
+                    print("Domain:", domain)
+                    print("Risk:", analysis["risk"])
+                    print("Score:", analysis["score"])
+                
+                    for reason in analysis["reasons"]:
+                        print("Reason:", reason)
+                
+                    print("-" * 40)
             except DNSError as error:
                 print(f"Invalid DNS packet: {error}")
             except Exception as error:
