@@ -5,7 +5,14 @@ from pathlib import Path
 from dnslib import DNSRecord, DNSError, QTYPE, RCODE, RR, A
 from behavior import DNSBehaviourDetector
 from security import analyze_dns_query
+import json
+from datetime import timezone
+from p1_detector import P1Detector
 
+p1_detector = P1Detector(
+    window_seconds=60,
+    interval_seconds=5
+)
 HOST="127.0.0.1"
 PORT=5300
 
@@ -161,15 +168,68 @@ def log_security_alert(client_ip, result, detector="BASELINE"):
             result["score"],
             reasons
         ))
+
+def initialize_p1_database():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS p1_transitions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                client_ip TEXT NOT NULL,
+                parent_domain TEXT NOT NULL,
+                from_state TEXT NOT NULL,
+                to_state TEXT NOT NULL,
+                evidence_json TEXT NOT NULL,
+                features_json TEXT NOT NULL,
+                samples_json TEXT NOT NULL
+            )
+        """)
+
+#SQlite table for transactions
+def save_p1_transition(event):
+    timestamp = datetime.now(
+        timezone.utc
+    ).isoformat(timespec="seconds")
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT INTO p1_transitions (
+                timestamp, client_ip, parent_domain,
+                from_state, to_state,
+                evidence_json, features_json, samples_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            timestamp,
+            event["client_ip"],
+            event["parent_domain"],
+            event["from_state"],
+            event["to_state"],
+            json.dumps(event["evidence"]),
+            json.dumps(event["features"]),
+            json.dumps(event["samples"])
+        ))
+
+    print(
+        f"\n[P1] {event['client_ip']} | "
+        f"{event['parent_domain']} | "
+        f"{event['from_state']} -> {event['to_state']}"
+    )
+    print("Evidence:", event["evidence"])
+    print("Features:", event["features"])
+
+
 #dns server
 
 def start_dns_server():     
     initialize_database()
+    initialize_p1_database()
     server=socket.socket(
         socket.AF_INET,
         socket.SOCK_DGRAM  
     )
     server.bind((HOST,PORT))
+    server.settimeout(1.0)
     print("="*50)
     print("        DNSENTINEL - DNS SECURITY SERVER")
     print("=" * 50)
@@ -182,7 +242,14 @@ def start_dns_server():
     print("Waiting for DNS requests...\n", flush=True)
     try:
         while True:
-            data,client_address=server.recvfrom(4096)
+            for transition in p1_detector.evaluate():
+                save_p1_transition(transition)
+
+            try:
+                data, client_address = server.recvfrom(4096)
+            except socket.timeout:
+                continue
+            
             print(
                 f"PACKET RECEIVED: {len(data)} bytes from {client_address}",
                 flush=True
@@ -219,7 +286,12 @@ def start_dns_server():
                     status,
                     response_code
                 )
-
+                p1_detector.observe(
+                    client_ip=client_address[0],
+                    domain=domain,
+                    response_code=response_code,
+                    status=status
+                )
                 # Analyze the DNS query
                 analysis = analyze_dns_query(domain)
                 
