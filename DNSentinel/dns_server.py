@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from dnslib import DNSRecord, DNSError, QTYPE, RCODE, RR, A
+from behavior import DNSBehaviourDetector
 from security import analyze_dns_query
 
 HOST="127.0.0.1"
@@ -18,6 +19,8 @@ BLOCKED_DOMAINS = {
     "malware.test",
     "phishing.test",
 }
+
+behaviour_detector = DNSBehaviourDetector()
 
 #database
 
@@ -132,7 +135,7 @@ def process_dns_request(request):
         return reply, domain, query_type, "ERROR"
 
 #security
-def log_security_alert(client_ip, result):
+def log_security_alert(client_ip, result, detector="BASELINE"):
 
     if result["risk"] == "LOW":
         return
@@ -153,7 +156,7 @@ def log_security_alert(client_ip, result):
             timestamp,
             client_ip,
             result["domain"],
-            "BASELINE",
+            detector,
             result["risk"],
             result["score"],
             reasons
@@ -235,6 +238,30 @@ def start_dns_server():
                     for reason in analysis["reasons"]:
                         print("Reason:", reason)
                 
+                #behavioral detection
+
+                behaviour_result = behaviour_detector.analyze(
+                    client_address[0],
+                    domain,
+                    response_code
+                )
+
+                if behaviour_result:
+                
+                    log_security_alert(
+                        client_address[0],
+                        behaviour_result,
+                        detector="BEHAVIOUR"
+                    )
+
+                    print("\n[BEHAVIOURAL SECURITY ALERT]")
+                    print("Domain group:", behaviour_result["domain"])
+                    print("Risk:", behaviour_result["risk"])
+                    print("Score:", behaviour_result["score"])
+
+                    for reason in behaviour_result["reasons"]:
+                        print("Reason:", reason)
+
                     print("-" * 40)
             except DNSError as error:
                 print(f"Invalid DNS packet: {error}")
