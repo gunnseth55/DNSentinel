@@ -184,6 +184,40 @@ def initialize_p1_database():
                 samples_json TEXT NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS p1_current (
+                client_ip TEXT NOT NULL,
+                parent_domain TEXT NOT NULL,
+                state TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                evidence_json TEXT NOT NULL,
+                features_json TEXT NOT NULL,
+                samples_json TEXT NOT NULL,
+                PRIMARY KEY (client_ip, parent_domain)
+            )
+        """)
+
+
+def save_p1_snapshots(snapshots):
+    if not snapshots:
+        return
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.executemany("""
+            INSERT INTO p1_current
+                (client_ip, parent_domain, state, timestamp,
+                 evidence_json, features_json, samples_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(client_ip, parent_domain) DO UPDATE SET
+                state=excluded.state, timestamp=excluded.timestamp,
+                evidence_json=excluded.evidence_json,
+                features_json=excluded.features_json,
+                samples_json=excluded.samples_json
+        """, [(
+            event["client_ip"], event["parent_domain"], event["to_state"],
+            timestamp, json.dumps(event["evidence"]),
+            json.dumps(event["features"]), json.dumps(event["samples"])
+        ) for event in snapshots])
 
 #SQlite table for transactions
 def save_p1_transition(event):
@@ -229,6 +263,9 @@ def start_dns_server():
         socket.SOCK_DGRAM  
     )
     server.bind((HOST,PORT))
+    # Detector state lives in memory, so a new server starts a new current view.
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM p1_current")
     server.settimeout(1.0)
     print("="*50)
     print("        DNSENTINEL - DNS SECURITY SERVER")
@@ -244,6 +281,7 @@ def start_dns_server():
         while True:
             for transition in p1_detector.evaluate():
                 save_p1_transition(transition)
+            save_p1_snapshots(p1_detector.snapshots)
 
             try:
                 data, client_address = server.recvfrom(4096)

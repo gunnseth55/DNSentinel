@@ -3,6 +3,21 @@ from p1_detector import P1Detector
 
 
 class TestP1(unittest.TestCase):
+    def test_current_snapshot_without_state_transition(self):
+        d = P1Detector()
+        d.observe("127.0.0.1", "a.demo.test", "NOERROR", "LOCAL", now=0)
+        self.assertEqual(d.evaluate(now=0), [])
+        self.assertEqual(d.snapshots[0]["to_state"], "NORMAL")
+        self.assertEqual(d.snapshots[0]["features"]["query_count"], 1)
+        d.evaluate(now=1)
+        self.assertEqual(d.snapshots, [])
+        d.observe("127.0.0.1", "a.demo.test", "NOERROR", "LOCAL", now=2)
+        self.assertEqual(d.evaluate(now=5), [])
+        self.assertEqual(d.snapshots[0]["features"]["query_count"], 2)
+        d.evaluate(now=70)
+        self.assertEqual(d.snapshots[0]["features"]["query_count"], 0)
+        self.assertEqual(d.snapshots[0]["to_state"], "NORMAL")
+
     def test_watch_then_alert_then_expiry(self):
         d = P1Detector()
         for i in range(3):

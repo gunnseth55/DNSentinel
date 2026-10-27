@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from p1_dashboard import load_p1_data, render_p1
 
 DB_PATH = Path(__file__).resolve().parent / "dns_events.db"
 
@@ -60,6 +61,12 @@ def live_dashboard():
             """,
             connection,
         )
+        try:
+            p1_current, p1_history = load_p1_data(connection)
+            p1_error = None
+        except (sqlite3.Error, pd.errors.DatabaseError) as exc:
+            p1_current, p1_history = pd.DataFrame(), pd.DataFrame()
+            p1_error = str(exc)
     except (sqlite3.Error, ValueError, KeyError) as exc:
         st.error(
             "Could not read the DNSentinel tables. "
@@ -78,8 +85,8 @@ def live_dashboard():
     cols[2].metric("Baseline alerts", int(metrics["baseline_alerts"]))
     cols[3].metric("Behaviour alerts", int(metrics["behaviour_alerts"]))
 
-    tab_queries, tab_alerts, tab_analytics = st.tabs(
-        ["DNS activity",  "Security alerts", "Traffic analysis"]
+    tab_queries, tab_alerts, tab_p1, tab_analytics = st.tabs(
+        ["DNS activity", "Security alerts", "P1 monitor", "Traffic analysis"]
     )
 
     with tab_queries:
@@ -117,6 +124,12 @@ def live_dashboard():
                 "Scores are fixed rule-based severity indicators, "
                 "not probabilities of malicious activity."
             )
+
+    with tab_p1:
+        if p1_error:
+            st.error(f"Could not read P1 data: {p1_error}")
+        else:
+            render_p1(p1_current, p1_history)
 
     with tab_analytics:
         st.subheader("Traffic analysis")

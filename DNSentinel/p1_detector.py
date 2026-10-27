@@ -34,6 +34,7 @@ class P1Detector:
         self.histories = defaultdict(deque)
         self.states = {}
         self.last_evaluation = None
+        self.snapshots = []
 
     def observe(self, client_ip, domain, response_code, status, now=None):
         """Save an eligible completed DNS transaction for later evaluation."""
@@ -63,8 +64,9 @@ class P1Detector:
         return True
 
     def evaluate(self, now=None):
-        """Return only state transitions; safe to call more often than every 5s."""
+        """Return transitions and refresh snapshots for this evaluation only."""
         timestamp = monotonic() if now is None else now
+        self.snapshots = []
         if (self.last_evaluation is not None
                 and timestamp - self.last_evaluation < self.interval_seconds):
             return []
@@ -106,35 +108,37 @@ class P1Detector:
             )
             previous = self.states.get(key, "NORMAL")
 
+            snapshot = {
+                "clock_seconds": round(timestamp, 3),
+                "client_ip": key[0],
+                "parent_domain": key[1],
+                "from_state": previous,
+                "to_state": target_state,
+                "evidence": {
+                    "naming": naming,
+                    "timing": timing,
+                    "response": response,
+                },
+                "features": {
+                    "query_count": count,
+                    "unique_subdomains": unique_count,
+                    "unique_ratio": round(unique_ratio, 3),
+                    "max_label_length": maximum_length,
+                    "max_label_entropy": round(maximum_entropy, 3),
+                    "queries_last_15s": burst_count,
+                    "nxdomain_count": nx_count,
+                    "nxdomain_ratio": round(nx_ratio, 3),
+                },
+                "samples": [
+                    {"domain": item["domain"], "response": item["rcode"],
+                     "source": item["source"]}
+                    for item in items[-5:]
+                ],
+            }
+            self.snapshots.append(snapshot)
             if target_state != previous:
                 self.states[key] = target_state
-                transitions.append({
-                    "clock_seconds": round(timestamp, 3),
-                    "client_ip": key[0],
-                    "parent_domain": key[1],
-                    "from_state": previous,
-                    "to_state": target_state,
-                    "evidence": {
-                        "naming": naming,
-                        "timing": timing,
-                        "response": response,
-                    },
-                    "features": {
-                        "query_count": count,
-                        "unique_subdomains": unique_count,
-                        "unique_ratio": round(unique_ratio, 3),
-                        "max_label_length": maximum_length,
-                        "max_label_entropy": round(maximum_entropy, 3),
-                        "queries_last_15s": burst_count,
-                        "nxdomain_count": nx_count,
-                        "nxdomain_ratio": round(nx_ratio, 3),
-                    },
-                    "samples": [
-                        {"domain": item["domain"], "response": item["rcode"],
-                         "source": item["source"]}
-                        for item in items[-5:]
-                    ],
-                })
+                transitions.append(snapshot)
 
             # Expired groups do not occupy memory indefinitely.
             if not history:
