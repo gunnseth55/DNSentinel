@@ -1,0 +1,91 @@
+{
+  "parent_domain": "p1verify091716.test",
+  "client_ip": "127.0.0.1",
+  "checks": [
+    {
+      "state": "NORMAL",
+      "snapshot_timestamp": "2026-10-27T09:17:18+00:00",
+      "features": {
+        "query_count": 1,
+        "unique_subdomains": 1,
+        "unique_ratio": 1.0,
+        "max_label_length": 6,
+        "max_label_entropy": 2.585,
+        "queries_last_15s": 1,
+        "nxdomain_count": 1,
+        "nxdomain_ratio": 1.0
+      },
+      "evidence": {
+        "naming": false,
+        "timing": false,
+        "response": false
+      },
+      "dashboard_verified": true
+    },
+    {
+      "state": "WATCH",
+      "snapshot_timestamp": "2026-10-27T09:17:23+00:00",
+      "features": {
+        "query_count": 3,
+        "unique_subdomains": 3,
+        "unique_ratio": 1.0,
+        "max_label_length": 6,
+        "max_label_entropy": 2.585,
+        "queries_last_15s": 3,
+        "nxdomain_count": 3,
+        "nxdomain_ratio": 1.0
+      },
+      "evidence": {
+        "naming": true,
+        "timing": false,
+        "response": false
+      },
+      "dashboard_verified": true
+    },
+    {
+      "state": "ALERT",
+      "snapshot_timestamp": "2026-10-27T09:17:29+00:00",
+      "features": {
+        "query_count": 4,
+        "unique_subdomains": 4,
+        "unique_ratio": 1.0,
+        "max_label_length": 6,
+        "max_label_entropy": 2.585,
+        "queries_last_15s": 4,
+        "nxdomain_count": 4,
+        "nxdomain_ratio": 1.0
+      },
+      "evidence": {
+        "naming": true,
+        "timing": false,
+        "response": true
+      },
+      "dashboard_verified": true
+    }
+  ],
+  "transitions": [
+    {
+      "id": 15,
+      "timestamp": "2026-10-27T09:17:23+00:00",
+      "client_ip": "127.0.0.1",
+      "parent_domain": "p1verify091716.test",
+      "from_state": "NORMAL",
+      "to_state": "WATCH",
+      "evidence_json": "{\"naming\": true, \"timing\": false, \"response\": false}",
+      "features_json": "{\"query_count\": 3, \"unique_subdomains\": 3, \"unique_ratio\": 1.0, \"max_label_length\": 6, \"max_label_entropy\": 2.585, \"queries_last_15s\": 3, \"nxdomain_count\": 3, \"nxdomain_ratio\": 1.0}",
+      "samples_json": "[{\"domain\": \"probe0.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}, {\"domain\": \"probe1.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}, {\"domain\": \"probe2.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}]"
+    },
+    {
+      "id": 16,
+      "timestamp": "2026-10-27T09:17:29+00:00",
+      "client_ip": "127.0.0.1",
+      "parent_domain": "p1verify091716.test",
+      "from_state": "WATCH",
+      "to_state": "ALERT",
+      "evidence_json": "{\"naming\": true, \"timing\": false, \"response\": true}",
+      "features_json": "{\"query_count\": 4, \"unique_subdomains\": 4, \"unique_ratio\": 1.0, \"max_label_length\": 6, \"max_label_entropy\": 2.585, \"queries_last_15s\": 4, \"nxdomain_count\": 4, \"nxdomain_ratio\": 1.0}",
+      "samples_json": "[{\"domain\": \"probe0.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}, {\"domain\": \"probe1.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}, {\"domain\": \"probe2.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}, {\"domain\": \"probe3.p1verify091716.test\", \"response\": \"NXDOMAIN\", \"source\": \"LOCAL_TEST\"}]"
+    }
+  ],
+  "verified_at_utc": "2026-10-27T09:17:29.905430+00:00"
+}

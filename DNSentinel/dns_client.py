@@ -1,18 +1,25 @@
 
 import sys
-from dnslib import DNSRecord, RCODE
+from dnslib import DNSRecord, DNSQuestion, RCODE
 
 DNS_SERVER = "127.0.0.1"
 DNS_PORT = 5300
 
 
 def query_dns(domain, record_type="A"):
-    request = DNSRecord.question(domain, record_type)
-
     print(f"\nQuerying: {domain}")
     print(f"DNS Server: {DNS_SERVER}:{DNS_PORT}")
 
     try:
+        type_text = str(record_type).upper()
+        numeric = type_text[4:] if type_text.startswith("TYPE") else type_text
+        if numeric.isdecimal():
+            code = int(numeric)
+            if not 0 <= code <= 65535:
+                raise ValueError("DNS type must be between 0 and 65535")
+            request = DNSRecord(q=DNSQuestion(domain, code))
+        else:
+            request = DNSRecord.question(domain, type_text)
         response_data = request.send(
             DNS_SERVER,
             DNS_PORT,

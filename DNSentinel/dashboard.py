@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -35,7 +36,8 @@ def live_dashboard():
               (SELECT COUNT(*) FROM dns_logs) AS total_queries,
               (SELECT COUNT(*) FROM dns_logs WHERE status = 'BLOCKED') AS blocked,
               (SELECT COUNT(*) FROM dns_alerts WHERE detector = 'BASELINE') AS baseline_alerts,
-              (SELECT COUNT(*) FROM dns_alerts WHERE detector = 'BEHAVIOUR') AS behaviour_alerts
+              (SELECT COUNT(*) FROM dns_alerts WHERE detector = 'BEHAVIOUR') AS behaviour_alerts,
+              (SELECT COUNT(*) FROM dns_alerts WHERE detector = 'B1') AS b1_alerts
             """,
             connection,
         ).iloc[0]
@@ -51,10 +53,16 @@ def live_dashboard():
             connection,
         )
 
+        alert_columns = {row[1] for row in connection.execute("PRAGMA table_info(dns_alerts)")}
+        optional_columns = [name for name in (
+            "triggered_rules", "features_json", "rule_details_json",
+            "configuration", "last_seen", "occurrences",
+        ) if name in alert_columns]
+        extras = ", " + ", ".join(optional_columns) if optional_columns else ""
         alerts = pd.read_sql_query(
-            """
-            SELECT timestamp, client_ip, domain, detector,
-                   risk, score, reasons
+            f"""
+            SELECT id, timestamp, client_ip, domain, detector,
+                   risk, score, reasons{extras}
             FROM dns_alerts
             ORDER BY id DESC
             LIMIT 300
@@ -79,11 +87,12 @@ def live_dashboard():
             connection.close()
 
     st.caption("Refreshing every 3 seconds while this page is open")
-    cols = st.columns(4)
+    cols = st.columns(5)
     cols[0].metric("DNS queries", int(metrics["total_queries"]))
     cols[1].metric("Blocked queries", int(metrics["blocked"]))
     cols[2].metric("Baseline alerts", int(metrics["baseline_alerts"]))
     cols[3].metric("Behaviour alerts", int(metrics["behaviour_alerts"]))
+    cols[4].metric("B1 alerts", int(metrics["b1_alerts"]))
 
     tab_queries, tab_alerts, tab_p1, tab_analytics = st.tabs(
         ["DNS activity", "Security alerts", "P1 monitor", "Traffic analysis"]
@@ -111,7 +120,7 @@ def live_dashboard():
         if alerts.empty:
             st.success("No security alerts recorded yet.")
         else:
-            detector_options = ["All", "BASELINE", "BEHAVIOUR"]
+            detector_options = ["All", "BASELINE", "BEHAVIOUR", "B1"]
             selected_detector = st.selectbox(
                 "Detection engine", detector_options, key="alert_detector_filter"
             )
@@ -119,7 +128,32 @@ def live_dashboard():
                 alerts if selected_detector == "All"
                 else alerts[alerts["detector"] == selected_detector]
             )
-            st.dataframe(visible_alerts, hide_index=True, width="stretch")
+            visible_columns = [name for name in visible_alerts.columns
+                               if name not in ("features_json", "rule_details_json")]
+            st.dataframe(visible_alerts[visible_columns], hide_index=True, width="stretch")
+            b1_rows = visible_alerts[visible_alerts["detector"] == "B1"]
+            if not b1_rows.empty and "rule_details_json" in b1_rows:
+                with st.expander("B1 measured features and rule explanations"):
+                    selected_id = st.selectbox(
+                        "B1 incident", b1_rows["id"].tolist(),
+                        format_func=lambda value: (
+                            f"#{value} | " + b1_rows.set_index("id").loc[value, "client_ip"]
+                            + " | " + b1_rows.set_index("id").loc[value, "domain"]
+                        ), key="b1_incident",
+                    )
+                    incident = b1_rows[b1_rows["id"] == selected_id].iloc[0]
+                    for column, label in (("features_json", "Latest evaluation features"),
+                                          ("rule_details_json", "Last triggering values for each rule")):
+                        st.write(f"**{label}**")
+                        try:
+                            st.json(json.loads(incident[column]))
+                        except (TypeError, ValueError):
+                            st.info("No structured values recorded for this incident.")
+                    st.caption(
+                        "B1 merges continuing alerts per client/domain. Rule IDs accumulate "
+                        "within an incident; active_rule_ids lists rules active at the latest "
+                        "evaluation. B1 uses severity labels and leaves the score empty."
+                    )
             st.caption(
                 "Scores are fixed rule-based severity indicators, "
                 "not probabilities of malicious activity."

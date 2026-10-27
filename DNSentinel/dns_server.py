@@ -8,6 +8,11 @@ from security import analyze_dns_query
 import json
 from datetime import timezone
 from p1_detector import P1Detector
+from b1_detector import B1Detector
+
+# Use configuration="core" for R1-R5; Expanded also enables R6, R7 and R8.
+# Pass B1Thresholds(...) and cooldown_seconds=... to customize defaults.
+b1_detector = B1Detector(configuration="expanded")
 
 p1_detector = P1Detector(
     window_seconds=60,
@@ -57,6 +62,15 @@ def initialize_database():
                 reasons TEXT
             )
         """)
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(dns_alerts)")}
+        for column, kind in {
+            "triggered_rules": "TEXT", "features_json": "TEXT",
+            "rule_details_json": "TEXT", "incident_id": "TEXT",
+            "configuration": "TEXT", "last_seen": "TEXT", "occurrences": "INTEGER",
+        }.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE dns_alerts ADD COLUMN {column} {kind}")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS dns_alerts_incident ON dns_alerts(incident_id)")
 def log_request(client_ip,domain, query_type,status, response_code):
     timestamp=datetime.now().isoformat(timespec="seconds")
     with sqlite3.connect(DB_PATH) as conn:
@@ -168,6 +182,36 @@ def log_security_alert(client_ip, result, detector="BASELINE"):
             result["score"],
             reasons
         ))
+
+def log_b1_alert(result):
+    """Merge one continuing B1 incident into the existing alert table."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT INTO dns_alerts
+                (timestamp, client_ip, domain, detector, risk, score, reasons,
+                 triggered_rules, features_json, rule_details_json, incident_id,
+                 configuration, last_seen, occurrences)
+            VALUES (?, ?, ?, 'B1', ?, NULL, ?, ?, ?, ?, ?, ?, ?, 1)
+            ON CONFLICT(incident_id) DO UPDATE SET
+                risk=excluded.risk, reasons=excluded.reasons,
+                triggered_rules=excluded.triggered_rules,
+                features_json=excluded.features_json,
+                rule_details_json=excluded.rule_details_json,
+                last_seen=excluded.last_seen,
+                occurrences=dns_alerts.occurrences + 1
+        """, (
+            result["timestamp"], result["client_ip"], result["domain"],
+            result["severity"], "; ".join(result["reasons"]),
+            json.dumps(result["triggered_rules"]), json.dumps(result["features"]),
+            json.dumps(result["rule_details"]), result["incident_id"],
+            result["configuration"], result["timestamp"],
+        ))
+    if result["new_incident"] or result["new_rules"]:
+        print(f"\n[B1 ALERT] {result['client_ip']} | {result['domain']} | "
+              f"{result['severity']} | {', '.join(result['triggered_rules'])}", flush=True)
+        for reason in result["reasons"]:
+            print("Reason:", reason, flush=True)
+
 
 def initialize_p1_database():
     with sqlite3.connect(DB_PATH) as conn:
@@ -330,6 +374,16 @@ def start_dns_server():
                     response_code=response_code,
                     status=status
                 )
+                # Independent observer: never modifies the DNS reply or P1 state.
+                try:
+                    b1_alert = b1_detector.observe(
+                        client_address[0], domain, request.q.qtype,
+                        response_code, status,
+                    )
+                    if b1_alert:
+                        log_b1_alert(b1_alert)
+                except Exception as error:
+                    print(f"B1 observation error: {error}", flush=True)
                 # Analyze the DNS query
                 analysis = analyze_dns_query(domain)
                 
