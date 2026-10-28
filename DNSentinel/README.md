@@ -5,6 +5,10 @@
 **Progress snapshot:** 28 October 2026  
 **Current milestone:** First M1 benign-only GRU autoencoder trained for 10 CPU epochs; best checkpoint and reconstruction metrics saved. Attack evaluation and live shadow integration remain pending.
 
+**Explanatory guides:** Start with the [documentation index](docs/README.md) for
+architecture diagrams, detector logic, the dataset/model explanation, Windows
+demonstrations, troubleshooting and a glossary.
+
 ## 1. Objective
 
 DNSentinel is a local DNS security gateway that logs DNS activity and compares simple rules, expanded independent rules, and a corroborated state-machine detector. **M1, a GRU-based recurrent neural network**, is now trained as a benign-reference sequence autoencoder for DNS anomaly research. Its future live integration will use **shadow mode** (monitor and log predictions; do not automatically block DNS).
