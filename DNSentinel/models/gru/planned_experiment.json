@@ -1,0 +1,19 @@
+{
+  "status": "planned_not_executed",
+  "mode": "benign_autoencoder",
+  "input_size": 12,
+  "sequence_length": 20,
+  "hidden_size": 32,
+  "gru_layers": 1,
+  "dropout": 0.1,
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "epochs_max": 10,
+  "patience": 3,
+  "seed": 42,
+  "device": "cpu",
+  "loss": "masked per-sequence MSE",
+  "threshold_fit_split": "train",
+  "threshold_quantile": 0.99
+}

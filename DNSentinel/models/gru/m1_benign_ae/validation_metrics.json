@@ -1,0 +1,20 @@
+{
+  "mode": "benign_autoencoder",
+  "split": "validation",
+  "model_version": "M1-benign_autoencoder-20261028T142050413090Z",
+  "sequences": 1670,
+  "mean_reconstruction_error": 0.46097859786656087,
+  "std_reconstruction_error": 0.15981102407285414,
+  "error_quantiles": {
+    "0.5": 0.429164782166481,
+    "0.9": 0.6274246871471406,
+    "0.95": 0.7222151368856429,
+    "0.99": 1.0304646611213681
+  },
+  "decision_threshold": 1.161235432624816,
+  "benign_threshold_exceedance_rate": 0.004790419161676647,
+  "threshold_basis": "Training reconstruction errors only; not a malicious-traffic classifier.",
+  "classification_precision": null,
+  "classification_recall": null,
+  "classification_f1": null
+}

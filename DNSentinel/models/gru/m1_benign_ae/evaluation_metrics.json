@@ -1,0 +1,35 @@
+{
+  "mode": "benign_autoencoder",
+  "best_epoch": 10,
+  "best_validation_loss": 0.46097859676012737,
+  "model_version": "M1-benign_autoencoder-20261028T142050413090Z",
+  "training_positive_weight": null,
+  "classification_metrics_available": false,
+  "threshold_quantile": 0.99,
+  "threshold_fit_split": "train",
+  "decision_threshold": 1.161235432624816,
+  "training": {
+    "sequences": 2529,
+    "mean_reconstruction_error": 0.4534229160580724,
+    "std_reconstruction_error": 0.17529991176238874,
+    "error_quantiles": {
+      "0.5": 0.4089251160621643,
+      "0.9": 0.6266381502151491,
+      "0.95": 0.7825673341751098,
+      "0.99": 1.161235432624816
+    }
+  },
+  "validation": {
+    "sequences": 1670,
+    "mean_reconstruction_error": 0.46097859786656087,
+    "std_reconstruction_error": 0.15981102407285414,
+    "error_quantiles": {
+      "0.5": 0.429164782166481,
+      "0.9": 0.6274246871471406,
+      "0.95": 0.7222151368856429,
+      "0.99": 1.0304646611213681
+    }
+  },
+  "validation_benign_threshold_exceedance_rate": 0.004790419161676647,
+  "interpretation": "Reconstruction loss and benign exceedance rate do not establish malicious-traffic detection accuracy."
+}

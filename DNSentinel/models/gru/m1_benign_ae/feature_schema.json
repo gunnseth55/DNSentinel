@@ -1,0 +1,39 @@
+{
+  "schema_version": "m1-features-v1",
+  "feature_names": [
+    "leftmost_label_length",
+    "qname_length",
+    "leftmost_label_entropy",
+    "leftmost_digit_ratio",
+    "subdomain_label_count",
+    "log1p_query_gap_s",
+    "qtype_A",
+    "qtype_AAAA",
+    "qtype_TXT",
+    "qtype_NULL",
+    "qtype_private",
+    "qtype_other"
+  ],
+  "sequence_length": 20,
+  "min_length": 20,
+  "group_by": "client",
+  "max_gap_s": 300,
+  "include_responses": false,
+  "gap_semantics": "Within-sequence chronological query gap; first query is zero; log1p transform.",
+  "response_semantics": "Optional: exact verified question match or explicit live matched response only; unknown stays unobserved.",
+  "qtype_encoding": "Fixed one-hot A/AAAA/TXT/NULL/private-use 65280-65534/other; never ordinal.",
+  "excluded_inputs": [
+    "capture",
+    "capture_group",
+    "capture_path",
+    "absolute timestamps",
+    "client_ip",
+    "server_ip",
+    "session_id",
+    "labels",
+    "capture_truncated",
+    "retransmission flags",
+    "response latency",
+    "domain string/identity"
+  ]
+}

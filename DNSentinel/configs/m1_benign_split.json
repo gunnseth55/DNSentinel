@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "mode": "benign_autoencoder",
+  "label_scope": "benign_capture_reference",
+  "evidence": "Publisher-designated benign recordings, raw identities pinned below. This is a benign-reference experiment, not independent per-query verification.",
+  "source": "https://www.unb.ca/cic/datasets/dns-exf-2021.html",
+  "segments": [
+    {
+      "capture": "benign_1.pcap",
+      "sha256": "2df7769f8e6b4db753ad968ce1da10427275d9456d38548e993eaaaf6484ae99",
+      "session_id": "benign_recording_1",
+      "split": "train",
+      "label": 0
+    },
+    {
+      "capture": "benign_2.pcap",
+      "sha256": "5ace9b02ecc7539cb806bbfedb9e7467d1b0b8ad14921938a09e6d7e2d2d3f93",
+      "session_id": "benign_recording_2",
+      "split": "validation",
+      "label": 0
+    }
+  ]
+}

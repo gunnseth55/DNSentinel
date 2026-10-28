@@ -1,0 +1,106 @@
+{
+  "mode": "benign_autoencoder",
+  "seed": 42,
+  "source_csv": "C:\\Users\\gunn\\Desktop\\work\\DNS\\DNSentinel\\data\\cic_bell_exf_2021\\processed\\all_captures\\dns_observations.csv",
+  "source_csv_sha256": "21558227d237ba9c338f15d7894dbe7f263e4207545100b9c527e8ca151e3d4e",
+  "extraction_audit_sha256": "52b1d46acad087f9908b9939a94f2683cec402b76514dfe78da3b4ae608e7c23",
+  "split_manifest_sha256": "c126098c7a5932d59c949485e3f65f3b0b319bf850c4ded70ceb86a3ee80246b",
+  "feature_schema": {
+    "schema_version": "m1-features-v1",
+    "feature_names": [
+      "leftmost_label_length",
+      "qname_length",
+      "leftmost_label_entropy",
+      "leftmost_digit_ratio",
+      "subdomain_label_count",
+      "log1p_query_gap_s",
+      "qtype_A",
+      "qtype_AAAA",
+      "qtype_TXT",
+      "qtype_NULL",
+      "qtype_private",
+      "qtype_other"
+    ],
+    "sequence_length": 20,
+    "min_length": 20,
+    "group_by": "client",
+    "max_gap_s": 300,
+    "include_responses": false,
+    "gap_semantics": "Within-sequence chronological query gap; first query is zero; log1p transform.",
+    "response_semantics": "Optional: exact verified question match or explicit live matched response only; unknown stays unobserved.",
+    "qtype_encoding": "Fixed one-hot A/AAAA/TXT/NULL/private-use 65280-65534/other; never ordinal.",
+    "excluded_inputs": [
+      "capture",
+      "capture_group",
+      "capture_path",
+      "absolute timestamps",
+      "client_ip",
+      "server_ip",
+      "session_id",
+      "labels",
+      "capture_truncated",
+      "retransmission flags",
+      "response latency",
+      "domain string/identity"
+    ]
+  },
+  "normalization_fit_split": "train",
+  "normalization_valid_tokens": 50580,
+  "capture_rows_selected": {
+    "benign_1.pcap": 50594,
+    "benign_2.pcap": 33406
+  },
+  "unlabelled_or_unselected_rows_excluded": 835,
+  "short_tail_rows_dropped": {
+    "train": 14,
+    "validation": 6
+  },
+  "stride": 20,
+  "splits": {
+    "train": {
+      "file": "train.npz",
+      "sha256": "788a2c26a01814898f3dd974ab3ea8d3f525bc259e05d51a36d528d68f4ccbe4",
+      "sequences": 2529,
+      "class_counts": {
+        "0": 2529
+      },
+      "length_counts": {
+        "20": 2529
+      }
+    },
+    "validation": {
+      "file": "validation.npz",
+      "sha256": "3dc8ac235aa9a6a5f6f08f02a552583294dc0de7f8d0f42b37f5ec44d5664c4b",
+      "sequences": 1670,
+      "class_counts": {
+        "0": 1670
+      },
+      "length_counts": {
+        "20": 1670
+      }
+    },
+    "test": {
+      "file": "test.npz",
+      "sha256": "a2aa00216acc05c51dd7cf2a591f1127bb012d533abb06707519f5a307a545c4",
+      "sequences": 0,
+      "class_counts": {},
+      "length_counts": {}
+    }
+  },
+  "limitations": [
+    "Benign-reference autoencoder validation is not attack classification evaluation.",
+    "Response features default OFF; capture loss and repeated queries remain dataset limitations.",
+    "No random record split, overlapping windows, provenance inputs or padding in the default configuration.",
+    "Source CSV response associations are preserved and are not repaired by sorting queries."
+  ],
+  "preprocessing_files": {
+    "feature_schema.json": "c558bdd0a98d5e6ecf78325ac4f7bfa5d8f69d741280a810f0c4addbf8f38c01",
+    "normalization.json": "34722f2d30b056026d0eca97fc3d6b4193223f96a9599abd831b1efd13ad5792",
+    "split_manifest.json": "b0ea5a2e4f735c7470f445ad7d3bf5a7e42a175ddbd9a8527dd90c8eb5e0bb2f"
+  },
+  "metadata_files": {
+    "train": "be1dbe8c97b6907c6d0738792620e60b9df6fd8906dd718ce05f013349b1a78e",
+    "validation": "16c224ab610ca2cdc3cf35b87b2cd38de316da63b6631fd547079c145ec00ab0",
+    "test": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

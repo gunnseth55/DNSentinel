@@ -1,0 +1,20 @@
+{
+  "status": "prepared_not_trained",
+  "training_requested_to_be_run_by_user": true,
+  "pytorch_installed": false,
+  "forward_pass_executed": false,
+  "epochs_executed": 0,
+  "checkpoint_created": false,
+  "mode": "benign_autoencoder",
+  "input_shape": [
+    20,
+    12
+  ],
+  "train_sequences": 2529,
+  "validation_sequences": 1670,
+  "independent_test_sequences": 0,
+  "model_runtime_validation": "pending PyTorch installation and user-run smoke check",
+  "dataset": "models/gru/prepared_benign",
+  "dataset_audit": "models/gru/dataset_audit.json",
+  "planned_checkpoint": "models/gru/m1_benign_ae/best.pt"
+}

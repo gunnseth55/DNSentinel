@@ -1,0 +1,29 @@
+{
+  "data": "models\\gru\\prepared_benign",
+  "output": "models\\gru\\m1_benign_ae",
+  "epochs": 10,
+  "batch_size": 64,
+  "hidden_size": 32,
+  "dropout": 0.1,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "patience": 3,
+  "min_delta": 1e-05,
+  "threshold_quantile": 0.99,
+  "device": "cpu",
+  "cpu_threads": 2,
+  "seed": 42,
+  "smoke_only": false,
+  "model_config": {
+    "input_size": 12,
+    "hidden_size": 32,
+    "dropout": 0.1,
+    "mode": "benign_autoencoder"
+  },
+  "model_version": "M1-benign_autoencoder-20261028T142050413090Z",
+  "torch_version": "2.15.0+cpu",
+  "numpy_version": "2.5.4",
+  "deterministic_algorithms": true,
+  "device_used": "cpu",
+  "validation_limitation": "Held-out capture used for early stopping, not an independent final test."
+}

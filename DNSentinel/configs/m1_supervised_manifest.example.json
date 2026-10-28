@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "mode": "supervised",
+  "label_scope": "verified_query_or_session",
+  "labels_verified": false,
+  "evidence": "TEMPLATE ONLY. Supply independently verified label intervals, identities and evidence. Do not use capture_group as a target.",
+  "segments": [
+    {
+      "capture": "REPLACE_WITH_CAPTURE.pcap",
+      "sha256": "REPLACE_WITH_RAW_CAPTURE_SHA256",
+      "session_id": "unique_verified_session",
+      "split": "train",
+      "label": 0,
+      "verified": false,
+      "evidence": "REPLACE_WITH_LABEL_SOURCE_AND_TIMEZONE_VALIDATION",
+      "start_epoch_s": "1600000000.000000",
+      "end_epoch_s": "1600000060.000000"
+    }
+  ]
+}
