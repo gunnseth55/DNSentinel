@@ -10,6 +10,7 @@ current results support.
 | [Architecture and request flow](architecture.md) | What happens to a DNS request, where decisions are made, and what is stored. |
 | [Detectors explained](detectors.md) | B0, the original behaviour detector, B1's eight rules, and P1's state machine. |
 | [Dataset and M1 training](dataset-and-m1.md) | Why the first model learns benign patterns, its features, and actual results. |
+| [Extraction v2 audit and results](extraction-v2.md) | Complete DNS/mDNS extraction, TCP support, response confidence, and the actual 14-capture comparison. |
 | [Running, demos and troubleshooting](running-and-troubleshooting.md) | Commands for Windows, useful demonstrations, and common problems. |
 | [Glossary](glossary.md) | Plain-language definitions of DNS, ML and evaluation terminology. |
 
