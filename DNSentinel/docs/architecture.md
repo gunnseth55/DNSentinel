@@ -112,12 +112,14 @@ flowchart LR
     SEQ --> TRAIN[GRU training and benign validation]
     TRAIN --> CKPT[Checkpoint and preprocessing metadata]
     CKPT --> INF[M1Predictor interface]
-    LIVE[Future ordered live observations] -. Proposed shadow connection .-> INF
-    INF -. Future score logging .-> DISPLAY[SQLite / dashboard]
+    LIVE[Ordered completed live observations] --> WORKER[Bounded background queue]
+    WORKER --> INF
+    INF --> DISPLAY[SQLite / dashboard]
 ```
 
-The dashed connections are planned, not implemented. M1 does not currently
-alter replies, block requests or update the live dashboard.
+M1 receives completed observations after the DNS reply is sent and updates the
+live dashboard through SQLite. It never alters replies or blocks requests.
+See the [live demo guide](m1-live-demo.md) for commands and checked results.
 
 Relevant files: [`dns_server.py`](../dns_server.py),
 [`dashboard.py`](../dashboard.py), [`p1_dashboard.py`](../p1_dashboard.py),

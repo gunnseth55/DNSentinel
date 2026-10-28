@@ -1,0 +1,103 @@
+{
+  "enabled": {
+    "predictions": [
+      {
+        "id": 1,
+        "timestamp": "2026-10-28T20:36:48.143344+00:00",
+        "client_ip": "127.0.0.1",
+        "domains_json": "[\"demo.test\"]",
+        "parent_domains_json": "[\"demo.test\"]",
+        "reconstruction_error": 0.1892545074224472,
+        "threshold": 1.161235432624816,
+        "anomaly": 0,
+        "model_version": "M1-benign_autoencoder-20261028T142050413090Z",
+        "sequence_size": 20,
+        "configured_sequence_size": 20,
+        "distribution_warnings_json": "[\"Reserved .test demo traffic differs from the Alexa-domain training reference.\"]",
+        "session_id": "c6070e9eebb54e76b28e905b9491288c"
+      },
+      {
+        "id": 2,
+        "timestamp": "2026-10-28T20:36:54.699605+00:00",
+        "client_ip": "127.0.0.1",
+        "domains_json": "[\"00a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"01a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"02a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"03a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"04a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"05a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"06a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"07a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"08a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"09a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"10a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"11a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"12a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"13a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"14a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"15a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"16a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"17a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"18a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\", \"19a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6.payload.demo.test\"]",
+        "parent_domains_json": "[\"demo.test\"]",
+        "reconstruction_error": 28.494251251220703,
+        "threshold": 1.161235432624816,
+        "anomaly": 1,
+        "model_version": "M1-benign_autoencoder-20261028T142050413090Z",
+        "sequence_size": 20,
+        "configured_sequence_size": 20,
+        "distribution_warnings_json": "[\"Reserved .test demo traffic differs from the Alexa-domain training reference.\", \"Some query features exceed five training standard deviations.\"]",
+        "session_id": "c6070e9eebb54e76b28e905b9491288c"
+      }
+    ],
+    "detector_alert_counts": [
+      {
+        "detector": "B1",
+        "count": 1
+      },
+      {
+        "detector": "BASELINE",
+        "count": 20
+      },
+      {
+        "detector": "BEHAVIOUR",
+        "count": 1
+      }
+    ],
+    "p1_transitions": [
+      {
+        "from_state": "NORMAL",
+        "to_state": "ALERT"
+      }
+    ],
+    "warmup_19_no_prediction": true,
+    "dashboard_loader_counts": {
+      "predictions": 2,
+      "anomalies": 1
+    },
+    "private_type_and_refused_dns_preserved": true
+  },
+  "disabled": {
+    "state": "DISABLED",
+    "dns_noerror_and_refused_preserved": true,
+    "details": {
+      "session_id": "f987f97043ff4420800698c60fac8fd1",
+      "checkpoint": "C:\\Users\\gunn\\Desktop\\work\\DNS\\DNSentinel\\models\\gru\\m1_benign_ae\\best.pt",
+      "shadow_only": true,
+      "observations": 0,
+      "predictions": 0,
+      "errors": 0,
+      "dropped_observations": 0,
+      "queued": 0
+    }
+  },
+  "bad_checkpoint": {
+    "state": "ERROR",
+    "dns_noerror_and_refused_preserved": true,
+    "details": {
+      "session_id": "2a6febda1b3a42ca9ff336e9581f40e2",
+      "checkpoint": "models\\gru\\m1_demo_check_20261028T203645Z\\missing.pt",
+      "shadow_only": true,
+      "observations": 0,
+      "predictions": 0,
+      "errors": 0,
+      "dropped_observations": 0,
+      "queued": 0,
+      "last_error": "[Errno 2] No such file or directory: 'models\\\\gru\\\\m1_demo_check_20261028T203645Z\\\\missing.pt'"
+    }
+  },
+  "additional_checks": {
+    "client_isolation": true,
+    "non_overlapping_windows": true,
+    "idle_gap_reset": true,
+    "out_of_order_rejected": true,
+    "query_only_response_independence": true,
+    "streamlit_render_no_app_exceptions": true,
+    "existing_preprocessing_tests_passed": 8,
+    "missing_dependency_failure_isolated": true,
+    "inference_failure_recovery": true,
+    "streamlit_harness_exit_warning": "Windows denied cleanup of a harness temporary directory; app rendering assertions and process exit code passed."
+  }
+}

@@ -67,8 +67,8 @@ every three seconds. General activity shows up to 500 recent requests; general
 alerts and P1 history show up to 300 recent rows. Total counters can therefore
 exceed the number of displayed rows.
 
-M1 is not yet a live dashboard detector. Its completed run is described in
-the saved reports and [training guide](dataset-and-m1.md).
+M1 is available in the **M1 monitor** tab. Follow the [live demo guide](m1-live-demo.md)
+for its 20-query warm-up, demonstrations, failure behaviour and saved results.
 
 ## Basic gateway checks
 

@@ -1,5 +1,7 @@
 import socket
 import sqlite3
+import os
+import time
 from datetime import datetime
 from pathlib import Path
 from dnslib import DNSRecord, DNSError, QTYPE, RCODE, RR, A
@@ -23,7 +25,7 @@ PORT=5300
 
 UPSTREAM_DNS = "1.1.1.1"
 UPSTREAM_PORT = 53
-DB_PATH = Path(__file__).parent / "dns_events.db"
+DB_PATH = Path(os.environ.get("DNSENTINEL_DB_PATH", Path(__file__).parent / "dns_events.db"))
 
 
 BLOCKED_DOMAINS = {
@@ -311,6 +313,15 @@ def start_dns_server():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM p1_current")
     server.settimeout(1.0)
+    m1 = None
+    try:
+        from ml.shadow import M1Shadow
+        checkpoint = Path(os.environ.get(
+            "DNSENTINEL_M1_CHECKPOINT", Path(__file__).parent / "models/gru/m1_benign_ae/best.pt"))
+        m1 = M1Shadow(DB_PATH, checkpoint,
+                      enabled=os.environ.get("DNSENTINEL_M1", "1").lower() not in ("0", "false", "off"))
+    except Exception as error:
+        print(f"M1 unavailable; DNS continues: {error}", flush=True)
     print("="*50)
     print("        DNSENTINEL - DNS SECURITY SERVER")
     print("=" * 50)
@@ -329,6 +340,7 @@ def start_dns_server():
 
             try:
                 data, client_address = server.recvfrom(4096)
+                query_arrival = time.monotonic()
             except socket.timeout:
                 continue
             
@@ -360,6 +372,20 @@ def start_dns_server():
                 )
 
                 response_code = RCODE[reply.header.rcode]
+
+                # Completed observation; arrival time, not response completion, defines gaps.
+                # Queueing never waits for inference and cannot change the DNS reply.
+                if m1 is not None:
+                    try:
+                        m1.submit({
+                            "client_ip": client_address[0], "qname": domain,
+                            "qtype_numeric": request.q.qtype,
+                            "timestamp_monotonic_s": query_arrival,
+                            "response_matched": status != "ERROR",
+                            "response_code_numeric": reply.header.rcode,
+                        })
+                    except Exception as error:
+                        print(f"M1 queue error; DNS continues: {error}", flush=True)
 
                 log_request(
                     client_address[0],
@@ -435,6 +461,8 @@ def start_dns_server():
         print("\nStopping DNSentinel...")
     finally:
         server.close()
+        if m1 is not None:
+            m1.close()
 
 if __name__=="__main__":
     start_dns_server()

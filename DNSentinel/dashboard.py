@@ -1,12 +1,14 @@
 import sqlite3
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from p1_dashboard import load_p1_data, render_p1
+from m1_dashboard import load_m1_data, render_m1
 
-DB_PATH = Path(__file__).resolve().parent / "dns_events.db"
+DB_PATH = Path(os.environ.get("DNSENTINEL_DB_PATH", Path(__file__).resolve().parent / "dns_events.db"))
 
 st.set_page_config(
     page_title="DNSentinel | Security Monitor",
@@ -75,6 +77,13 @@ def live_dashboard():
         except (sqlite3.Error, pd.errors.DatabaseError) as exc:
             p1_current, p1_history = pd.DataFrame(), pd.DataFrame()
             p1_error = str(exc)
+        try:
+            m1_rows, m1_runtime, m1_counts = load_m1_data(connection)
+            m1_error = None
+        except (sqlite3.Error, pd.errors.DatabaseError, ValueError) as exc:
+            m1_rows, m1_runtime = pd.DataFrame(), None
+            m1_counts = {"predictions": 0, "anomalies": 0}
+            m1_error = str(exc)
     except (sqlite3.Error, ValueError, KeyError) as exc:
         st.error(
             "Could not read the DNSentinel tables. "
@@ -87,15 +96,16 @@ def live_dashboard():
             connection.close()
 
     st.caption("Refreshing every 3 seconds while this page is open")
-    cols = st.columns(5)
+    cols = st.columns(6)
     cols[0].metric("DNS queries", int(metrics["total_queries"]))
     cols[1].metric("Blocked queries", int(metrics["blocked"]))
     cols[2].metric("Baseline alerts", int(metrics["baseline_alerts"]))
     cols[3].metric("Behaviour alerts", int(metrics["behaviour_alerts"]))
     cols[4].metric("B1 alerts", int(metrics["b1_alerts"]))
+    cols[5].metric("M1 anomalies", m1_counts["anomalies"])
 
-    tab_queries, tab_alerts, tab_p1, tab_analytics = st.tabs(
-        ["DNS activity", "Security alerts", "P1 monitor", "Traffic analysis"]
+    tab_queries, tab_alerts, tab_p1, tab_m1, tab_analytics = st.tabs(
+        ["DNS activity", "Security alerts", "P1 monitor", "M1 monitor", "Traffic analysis"]
     )
 
     with tab_queries:
@@ -164,6 +174,12 @@ def live_dashboard():
             st.error(f"Could not read P1 data: {p1_error}")
         else:
             render_p1(p1_current, p1_history)
+
+    with tab_m1:
+        if m1_error:
+            st.error(f"Could not read M1 data: {m1_error}")
+        else:
+            render_m1(m1_rows, m1_runtime, m1_counts)
 
     with tab_analytics:
         st.subheader("Traffic analysis")

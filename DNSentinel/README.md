@@ -3,7 +3,7 @@
 **Project:** Windows-based DNS security gateway and explainable threat detection mini-project  
 **Project directory:** `C:\Users\gunn\Desktop\work\DNS\DNSentinel`  
 **Progress snapshot:** 28 October 2026  
-**Current milestone:** First M1 benign-only GRU autoencoder trained for 10 CPU epochs; best checkpoint and reconstruction metrics saved. Attack evaluation and live shadow integration remain pending.
+**Current milestone:** The trained benign-only M1 GRU autoencoder now runs in live shadow mode, records SQLite predictions and appears on the dashboard. Attack evaluation remains pending. See [live demo commands and verified results](docs/m1-live-demo.md).
 
 **Explanatory guides:** Start with the [documentation index](docs/README.md) for
 architecture diagrams, detector logic, the dataset/model explanation, Windows
@@ -11,7 +11,7 @@ demonstrations, troubleshooting and a glossary.
 
 ## 1. Objective
 
-DNSentinel is a local DNS security gateway that logs DNS activity and compares simple rules, expanded independent rules, and a corroborated state-machine detector. **M1, a GRU-based recurrent neural network**, is now trained as a benign-reference sequence autoencoder for DNS anomaly research. Its future live integration will use **shadow mode** (monitor and log predictions; do not automatically block DNS).
+DNSentinel is a local DNS security gateway that logs DNS activity and compares simple rules, expanded independent rules, and a corroborated state-machine detector. **M1, a GRU-based recurrent neural network**, is trained as a benign-reference sequence autoencoder for DNS anomaly research. Its live integration uses **shadow mode** (monitor and log predictions; do not automatically block DNS).
 
 ## 2. Implemented components
 
@@ -23,7 +23,7 @@ DNSentinel is a local DNS security gateway that logs DNS activity and compares s
 | `behaviour.py` | Earlier rolling-window behavioural detector; demonstrated unique subdomain + NXDOMAIN alerts. |
 | `p1_detector.py` — P1 | Corroborated detector with naming/timing/response evidence and `NORMAL → WATCH → ALERT → NORMAL` state transitions. User confirmed P1 working. |
 | `b1_detector.py` — B1 | Independent-rule baseline; manual runs triggered length, diversity, burst, NXDOMAIN, depth, and unusual-record-type rules. |
-| `dashboard.py` | Existing monitoring/dashboard component; detailed current display coverage not independently audited. |
+| `dashboard.py` | Existing DNS activity, detector alerts, P1 monitor, M1 shadow predictions and traffic analysis tabs. |
 | `dns_events.db` | SQLite DNS request logs, alerts, and P1 transitions according to the implemented project. |
 
 **Demonstrated B1 checks:**
@@ -121,7 +121,8 @@ Import-Csv '.\data\cic_bell_exf_2021\processed\all_captures\dns_observations.csv
 | `ml/gru_model.py` | One-layer GRU encoder, GRU reconstruction decoder and optional supervised binary head. |
 | `ml/train_gru.py` | Seeded AdamW training, gradient clipping, validation early stopping and checkpoint persistence. |
 | `ml/evaluate_gru.py` | Saved-checkpoint evaluation; separates reconstruction statistics from supervised classification metrics. |
-| `ml/inference.py` | Separate ordered-observation prediction/buffering interface for future shadow-mode integration. |
+| `ml/inference.py` | Ordered-observation prediction/buffering interface using saved preprocessing. |
+| `ml/shadow.py`, `m1_dashboard.py` | Bounded background M1 inference, SQLite persistence, runtime status and dashboard results. |
 | `configs/m1_benign_split.json` | Raw-capture hashes and independent benign training/validation assignments. |
 | `configs/m1_supervised_manifest.example.json` | Deliberately unverified template for future reviewed query/session labels. |
 | `tests/test_m1_preprocessing.py` | Eight passing checks for feature leakage, timing, masks, label verification and metrics. |
@@ -268,13 +269,13 @@ Set-Location 'C:\Users\gunn\Desktop\work\DNS\DNSentinel'
 2. Obtain captures with complete DNS questions, verify attack/session timing and query labels, and retain unknown labels where evidence is insufficient.
 3. Evaluate M1 on representative held-out attack and benign sessions; compare B0/B1/P1/M1 using the same labelled data and explicit false-alarm analysis.
 4. Review optional response features only after matching/provenance issues are resolved.
-5. Connect the existing M1 inference interface to ordered live observations in shadow mode; record scores/version/threshold in SQLite and show them on the dashboard.
+5. Review the implemented [live M1 shadow demo](docs/m1-live-demo.md), including distribution warnings and operational results.
 6. Keep automatic blocking and changes to P1's state machine out of the initial M1 integration.
 
 ## 7. Current project status
 
 **Completed:** working DNS gateway and B0/B1/P1 demonstrations; 14-capture extraction; independent TShark/source audit; leakage-aware preprocessing; separate-capture train/validation sets; M1 autoencoder and supervised-ready code; successful forward check; first 10-epoch CPU training run; saved best checkpoint and reconstruction metrics.
 
-**Still pending:** reliable attack/query labels, representative complete attack sequences, supervised classifier training, attack-detection metrics, independent final testing, live M1 shadow integration and dashboard display.
+**Still pending:** reliable attack/query labels, representative complete attack sequences, supervised classifier training, attack-detection metrics and independent final testing. Live M1 shadow integration and dashboard display are implemented and checked.
 
 **Interpretation rule:** reconstruction improvement and a low benign validation exceedance rate do not establish malicious-traffic detection accuracy.

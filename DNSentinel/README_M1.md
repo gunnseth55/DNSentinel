@@ -222,7 +222,7 @@ training/validation must both contain verified examples of each class.
   --epochs 10 --seed 42 --device cpu
 ```
 
-## Future shadow inference
+## Live shadow inference
 
 `ml.inference.M1Predictor(checkpoint).observe(observation)` buffers ordered
 observations separately by client/session and optional parent domain, resets
@@ -233,10 +233,14 @@ The shared feature function ensures offline/live parity. Return fields include
 model output/anomaly score, threshold, version, sequence length and prediction
 timestamp. `predict(list_of_observations)` supports explicit windows.
 
-This interface does not change the gateway, SQLite or dashboard and never blocks.
-Before integration: inspect the completed run and flagged benign windows, obtain full attack questions and
-verified UTC session labels, then compare detectors on common held-out sessions.
-Only then add ordered shadow-mode observation delivery and dashboard logging.
+`ml.shadow.M1Shadow` now connects this interface to the gateway through a bounded
+background queue. It saves normal/anomalous predictions in `m1_predictions` and
+worker progress in `m1_runtime` within the existing SQLite database. The existing
+dashboard includes an M1 monitor. The saved model uses 20 queries per client,
+across domains, and query-only features. Live windows do not overlap and M1 never
+blocks. See [launch commands, demonstrations and integration checks](docs/m1-live-demo.md).
+Attack-labelled evaluation and detector comparison still require complete
+observations and reliable labels; this integration does not establish accuracy.
 
 ## Checks performed during preparation
 

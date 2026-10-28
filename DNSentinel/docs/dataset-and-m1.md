@@ -174,11 +174,12 @@ classifier as supplied. The supervised model has not been trained.
 
 [`M1Predictor`](../ml/inference.py) can accept ordered observations, maintain
 client/session buffers and return a score, threshold, model version, sequence
-length and prediction timestamp. It is separate from the running gateway.
+length and prediction timestamp. A bounded worker now connects it to the gateway
+and stores results for the dashboard; see the [live demo guide](m1-live-demo.md).
 
 Next: inspect flagged benign windows, obtain complete attack questions and
-reviewed labels, evaluate common held-out sessions against the rule detectors,
-then add shadow-mode score logging/dashboard display. The present reconstruction
+reviewed labels, and evaluate common held-out sessions against the rule detectors.
+Shadow-mode logging/display are implemented. The present reconstruction
 results do not establish that M1 detects attacks or outperforms B0/B1/P1.
 
 ## Dataset attribution
