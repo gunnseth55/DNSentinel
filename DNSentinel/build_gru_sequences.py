@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from ml.common import read_json, sha256, write_json
-from ml.features import feature_schema, parent_domain, sequence_features, timestamp
+from ml.features import feature_schema, parent_domain, sequence_features, timestamp, truth
 from ml.gru_dataset import fit_normalization
 
 
@@ -29,7 +29,8 @@ def validate_manifest(manifest, extraction_audit, mode):
         name = segment["capture"]
         if name not in captures or segment["sha256"] != captures[name]["sha256"]:
             raise ValueError(f"Capture identity/hash mismatch: {name}")
-        if sha256(captures[name]["capture_path"]) != segment["sha256"]:
+        # V2 pins capture hashes in its validated output: do not reopen raw PCAPs.
+        if extraction_audit.get("schema_version") != "dns-extraction-v2" and sha256(captures[name]["capture_path"]) != segment["sha256"]:
             raise ValueError(f"Raw capture changed since extraction: {name}")
         split, session = segment["split"], segment["session_id"]
         if split not in ("train", "validation", "test") or segment["label"] not in (0, 1):
@@ -49,9 +50,19 @@ def validate_manifest(manifest, extraction_audit, mode):
             raise ValueError("Label interval must be increasing, with exclusive upper bound")
         if mode == "supervised" and (segment.get("verified") is not True or not segment.get("evidence")):
             raise ValueError("Every supervised session needs verified=true and explicit evidence")
-    if not {"train", "validation"} <= set(capture_splits.values()):
-        raise ValueError("Independent training and validation captures are required")
+    required = {"train", "validation", "test"} if mode == "supervised" else {"train", "validation"}
+    if not required <= set(capture_splits.values()):
+        raise ValueError("Independent captures are required for every requested split: " + ", ".join(sorted(required)))
     return captures
+
+
+def observation_identity(row, version_two):
+    if not version_two:
+        return row["capture_path"], row["packet_index"]
+    expected = ":".join(row[name] for name in ("capture_sha256", "packet_index", "dns_message_index", "question_index"))
+    if row.get("observation_id") != expected:
+        raise ValueError("Invalid v2 composite observation identity")
+    return expected
 
 
 def build(args):
@@ -63,11 +74,16 @@ def build(args):
         raise ValueError("Output directory is not empty; use a new directory to preserve prior datasets")
     manifest = read_json(args.split_manifest)
     extraction = read_json(args.extraction_audit)
+    version_two = extraction.get("schema_version") == "dns-extraction-v2"
+    if version_two:
+        if extraction.get("status") != "completed" or sha256(args.input) != extraction.get("output_csv_sha256"):
+            raise ValueError("V2 CSV hash/completion does not match its extraction audit")
     captures = validate_manifest(manifest, extraction, args.mode)
     schema = feature_schema(args.sequence_length, args.min_length, args.group_by,
                             args.max_gap_s, args.include_responses)
     groups, seen, source_counts = defaultdict(list), set(), Counter()
     ignored = 0
+    scope_exclusions = Counter()
     with args.input.open(newline="", encoding="utf-8") as stream:
         reader = csv.DictReader(stream)
         required = {"capture", "capture_path", "client_ip", "qname", "qtype_numeric",
@@ -76,10 +92,32 @@ def build(args):
             raise ValueError(f"Missing CSV columns: {sorted(required - set(reader.fieldnames or []))}")
         for row in reader:
             stamp = timestamp(row)
-            identity = (row["capture_path"], row["packet_index"])
+            identity = observation_identity(row, version_two)
             if identity in seen:
                 raise ValueError("Repeated capture/packet identity in the CSV")
             seen.add(identity)
+            if version_two:
+                if row.get("dns_scope") != "unicast_dns":
+                    scope_exclusions["multicast_or_other_scope"] += 1
+                    continue
+                if row.get("qname_encoding") != "text" or row["qname"] == ".":
+                    scope_exclusions["root_or_escaped_qname_not_supported_by_live_features"] += 1
+                    continue
+                if row.get("question_count") != "1":
+                    scope_exclusions["multi_question_message_not_accepted_by_live_gateway"] += 1
+                    continue
+                if args.include_responses:
+                    # Keep source response values unchanged; mask unsupported or
+                    # uncertain associations only in the model's feature view.
+                    reliable = (truth(row.get("response_question_verified")) and
+                                not truth(row.get("response_timing_ambiguous")) and
+                                not truth(row.get("response_code_conflict")) and
+                                row.get("response_code_scope") in ("header_complete", "header_plus_opt_extended") and
+                                row.get("response_code_numeric", "") != "" and
+                                0 <= int(row["response_code_numeric"]) <= 15)
+                    if not reliable:
+                        row["response_matched"] = False
+                        row["response_question_verified"] = False
             matches = []
             for segment in manifest["segments"]:
                 if row["capture"] != segment["capture"]:
@@ -108,7 +146,8 @@ def build(args):
     used_rows = set()
     for key, observations in sorted(groups.items()):
         split, session, capture, client, parent, label = key
-        observations.sort(key=lambda row: (timestamp(row), int(row["packet_index"])))
+        observations.sort(key=lambda row: (timestamp(row), int(row["packet_index"]),
+                                           int(row.get("dns_message_index", 1)), int(row.get("question_index", 1))))
         blocks, current, previous = [], [], None
         for row in observations:
             stamp = timestamp(row)
@@ -129,7 +168,7 @@ def build(args):
                 padded = np.zeros((args.sequence_length, len(schema["feature_names"])), dtype=np.float32)
                 padded[:len(chunk)] = features
                 for row in chunk:
-                    identity = (row["capture_path"], row["packet_index"])
+                    identity = observation_identity(row, version_two)
                     if identity in used_rows:
                         raise ValueError("Query reuse/overlap across sequence windows")
                     used_rows.add(identity)
@@ -143,9 +182,10 @@ def build(args):
                     "start_epoch_s": chunk[0]["timestamp_epoch_s"],
                     "end_epoch_s": chunk[-1]["timestamp_epoch_s"],
                     "packet_indices": [int(row["packet_index"]) for row in chunk],
+                    "observation_ids": [row["observation_id"] for row in chunk] if version_two else [],
                     "length": len(chunk),
                 })
-    for split in ("train", "validation"):
+    for split in (("train", "validation", "test") if args.mode == "supervised" else ("train", "validation")):
         if not arrays[split]:
             raise ValueError(f"No {split} sequences. Check session gaps, min-length and label coverage")
         if args.mode == "supervised" and set(labels[split]) != {0, 1}:
@@ -186,6 +226,8 @@ def build(args):
         "source_csv_sha256": sha256(args.input), "extraction_audit_sha256": sha256(args.extraction_audit),
         "split_manifest_sha256": sha256(args.split_manifest), "feature_schema": schema,
         "normalization_fit_split": "train", "normalization_valid_tokens": int(sum(lengths["train"])),
+        "source_extraction_version": "v2" if version_two else "v1",
+        "scope_exclusions": dict(scope_exclusions),
         "preprocessing_files": {filename: sha256(args.output_dir / filename) for filename in
                                 ("feature_schema.json", "normalization.json", "split_manifest.json")},
         "metadata_files": {split: sha256(args.output_dir / f"{split}_metadata.jsonl") for split in arrays},

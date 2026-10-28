@@ -1,0 +1,98 @@
+{
+  "status": "BLOCKED_LABELS_AND_SPLITS",
+  "supervised_training_ready": false,
+  "observation_data_source": "extraction_v2 only; raw PCAPs and old processed CSVs not read",
+  "input_files_sha256": {
+    "data\\cic_bell_exf_2021\\processed\\extraction_v2\\dns_observations.csv": "64d3d35c79d331b12681e6019dd71c9bfdff02a70b3b5eddd663762cde364df8",
+    "data\\cic_bell_exf_2021\\processed\\extraction_v2\\extraction_audit.json": "753f797b69be662b74141360d186cee82f9f00ea2cc100799799d5abaadc4eae",
+    "data\\cic_bell_exf_2021\\processed\\extraction_v2\\validation_report.json": "595b7dd00711fe52c35509453deda49a533f80bcb6c86db9b9ec68314f093e1c"
+  },
+  "eligible_scope": "ordinary unicast DNS; multicast discovery excluded",
+  "source_category_counts_not_verified_class_labels": {
+    "excluded_mdns": 25313,
+    "attack_heavy": 759,
+    "attack_light": 76,
+    "benign": 84000
+  },
+  "candidate_positive_queries_not_verified": [
+    {
+      "capture": "light_exe.pcap",
+      "observation_id": "128b5aed4dda9e2d8004bcc881c1993c98a8b9b1ea69f438d76e8272fd201107:3590:1:1",
+      "timestamp_utc": "2020-11-21T23:58:34.582369000+00:00",
+      "qname": "643.zml0e5phhkmp-4g.cicresearch.ca"
+    }
+  ],
+  "verified_attack_sequence_count": 0,
+  "available_benign_reference_windows": {
+    "benign_1.pcap": 2529,
+    "benign_2.pcap": 1670
+  },
+  "unlabelled_window_counts_not_attack_labels": {
+    "heavy_audio.pcap": 0,
+    "heavy_compressed.pcap": 1,
+    "heavy_exe.pcap": 1,
+    "heavy_image.pcap": 0,
+    "heavy_text.pcap": 0,
+    "heavy_video.pcap": 2,
+    "light_audio.pcap": 0,
+    "light_compressed.pcap": 0,
+    "light_exe.pcap": 0,
+    "light_text.pcap": 0,
+    "light_video.pcap": 0
+  },
+  "prepared_supervised_splits": {
+    "train": {
+      "benign_sequences": 0,
+      "attack_sequences": 0,
+      "created": false
+    },
+    "validation": {
+      "benign_sequences": 0,
+      "attack_sequences": 0,
+      "created": false
+    },
+    "test": {
+      "benign_sequences": 0,
+      "attack_sequences": 0,
+      "created": false
+    }
+  },
+  "class_balance": null,
+  "normalization_fitted": false,
+  "planned_sequence_length": 20,
+  "planned_features_with_responses": [
+    "leftmost_label_length",
+    "qname_length",
+    "leftmost_label_entropy",
+    "leftmost_digit_ratio",
+    "subdomain_label_count",
+    "log1p_query_gap_s",
+    "qtype_A",
+    "qtype_AAAA",
+    "qtype_TXT",
+    "qtype_NULL",
+    "qtype_private",
+    "qtype_other",
+    "explicit_response_observed",
+    "rcode_NOERROR",
+    "rcode_NXDOMAIN",
+    "rcode_SERVFAIL",
+    "rcode_REFUSED",
+    "rcode_other"
+  ],
+  "planned_feature_dimensions": 18,
+  "supervised_loader_check": "not run: no legitimately labelled dataset exists",
+  "blockers": [
+    "No verified per-query/session attack annotation table is supplied by the v2 outputs or local capture metadata; capture groups are not class labels.",
+    "Only one recovered query matches the publisher attack-domain context. It remains a review candidate; its capture has no full 20-query window with max gap 300 seconds.",
+    "No independently verified positive windows can be allocated to train, validation and test without fabrication or leakage.",
+    "Only two benign reference recordings exist; the current capture-disjoint policy cannot supply all three splits. A third recording or separately justified independent-session split is needed."
+  ],
+  "label_context_source": "https://www.unb.ca/cic/datasets/dns-exf-2021.html",
+  "builder_gate_command": ".venv\\Scripts\\python.exe -B build_gru_sequences.py --mode supervised --input data\\cic_bell_exf_2021\\processed\\extraction_v2\\dns_observations.csv --extraction-audit data\\cic_bell_exf_2021\\processed\\extraction_v2\\extraction_audit.json --split-manifest configs/m1_supervised_manifest.example.json --output-dir models/gru/prepared_supervised --sequence-length 20 --stride 20 --include-responses",
+  "builder_gate_exit_code": 1,
+  "builder_gate_error": "Sequence preparation failed: Supervised mode requires explicit verified query/session labels, never capture categories",
+  "next_action": "Obtain complete attack observations with reviewed UTC/session/query labels and independent split groups; then supply a verified split manifest to the v2-capable builder.",
+  "training_executed": false,
+  "existing_checkpoint_modified": false
+}
