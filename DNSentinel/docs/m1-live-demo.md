@@ -122,3 +122,20 @@ The same checks preserved NOERROR, NXDOMAIN, blocked REFUSED, private-use type
 launches verified both explicitly disabled M1 and a missing checkpoint still
 served DNS. Check results are in
 `models/gru/m1_demo_check_20261028T203645Z/check_results.json`; no model was trained.
+
+
+
+p1
+# Stage 1: three distinct subdomains, which should produce WATCH
+1..3 | ForEach-Object {
+    .\.venv\Scripts\python.exe -B dns_client.py "a$_ .walkthrough.test".Replace(" ", "")
+}
+
+Wait a few seconds for P1’s scheduled evaluation and show the WATCH transition. Then send two more distinct names within 60 seconds:
+
+# Stage 2: two more distinct subdomains, bringing the total to five
+4..5 | ForEach-Object {
+    .\.venv\Scripts\python.exe -B dns_client.py "a$_ .walkthrough.test".Replace(" ", "")
+}
+
+
